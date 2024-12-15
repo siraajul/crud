@@ -29,3 +29,8 @@ A robust Flutter application for seamless product management, featuring comprehe
 ```bash
 git clone https://github.com/yourusername/product-management-app.git
 cd product-management-app
+```
+## Install Dependencies
+```bash
+flutter pub get
+```
