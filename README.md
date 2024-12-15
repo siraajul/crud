@@ -34,3 +34,29 @@ cd product-management-app
 ```bash
 flutter pub get
 ```
+
+## Run the App
+```bash
+flutter run
+```
+
+## Project Structure 
+```bash
+lib/
+├── main.dart
+├── models/
+│   └── product_model.dart
+├── screens/
+│   └── product_creation_screen.dart
+├── services/
+│   └── api_service.dart
+└── utils/
+    └── validators.dart
+```
+
+### API Integration
+```bash
+- Endpoint: https://crud.teamrabbil.com/api/v1/CreateProduct
+- Method: POST
+- Content-Type: application/json
+```
