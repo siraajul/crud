@@ -1,4 +1,4 @@
-# Flutter Product Management App
+# Flutter Product Management App(CRUD)
 
 ## Overview
 A robust Flutter application for seamless product management, featuring comprehensive API integration, input validation, and error handling.
