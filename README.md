@@ -13,6 +13,8 @@ A robust Flutter application for seamless product management, featuring comprehe
 ## Screenshots
 <img src="/screenshot/shot01.png" alt="App Screenshot" width="200"> <img src="/screenshot/shot02.png" alt="App Screenshot" width="200">
 <img src="/screenshot/shot03.png" alt="App Screenshot" width="200"> <img src="/screenshot/shot04.png" alt="App Screenshot" width="200">
+<img src="/screenshot/shot05.png" alt="App Screenshot" width="200"> <img src="/screenshot/shot06.png" alt="App Screenshot" width="200">
+<img src="/screenshot/shot07.png" alt="App Screenshot" width="200"> <img src="/screenshot/shot08.png" alt="App Screenshot" width="200">
 
 
 ## Prerequisites
