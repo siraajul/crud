@@ -60,3 +60,13 @@ lib/
 - Method: POST
 - Content-Type: application/json
 ```
+## Error Handling
+
+- Input validation before API call
+- Detailed error messages
+- Graceful error management
+
+## State Management
+
+- Built-in Flutter state management
+- Modular loading state implementation
