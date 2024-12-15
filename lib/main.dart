@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/main.dart';
+import 'crudApp.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const App());
 }
