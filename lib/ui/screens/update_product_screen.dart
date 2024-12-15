@@ -1,40 +1,89 @@
-import 'dart:convert';
-
-import 'package:crud/ui/model/product.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import '../../service/product_service.dart';
+import '../model/product.dart';
 
 class UpdateProductScreen extends StatefulWidget {
-  static String name = '/update_product_screen';
+  static const String name = '/update_product_screen';
   final Product product;
 
-  const UpdateProductScreen({super.key, required this.product});
+  const UpdateProductScreen({Key? key, required this.product}) : super(key: key);
 
   @override
   State<UpdateProductScreen> createState() => _UpdateProductScreenState();
 }
 
 class _UpdateProductScreenState extends State<UpdateProductScreen> {
-  final TextEditingController _nameTEController = TextEditingController();
-  final TextEditingController _priceTEController = TextEditingController();
-  final TextEditingController _totalPriceTEController = TextEditingController();
-  final TextEditingController _quantityTEController = TextEditingController();
-  final TextEditingController _imageTEController = TextEditingController();
-  final TextEditingController _codeTEController = TextEditingController();
+  // Controllers
+  late final Map<String, TextEditingController> _controllers;
 
+  // Service
+  final ProductService _productService = ProductService();
+
+  // Form Key
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  bool _updateProductInProgress = false;
+  // State
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _nameTEController.text = widget.product.productName ?? '';
-    _priceTEController.text = widget.product.unitPrice ?? '';
-    _totalPriceTEController.text = widget.product.totalPrice ?? '';
-    _quantityTEController.text = widget.product.quantity ?? '';
-    _imageTEController.text = widget.product.image ?? '';
-    _codeTEController.text = widget.product.productCode ?? '';
+
+    // Initialize controllers with existing product data
+    _controllers = {
+      'name': TextEditingController(text: widget.product.productName ?? ''),
+      'price': TextEditingController(text: widget.product.unitPrice ?? ''),
+      'totalPrice': TextEditingController(text: widget.product.totalPrice ?? ''),
+      'quantity': TextEditingController(text: widget.product.quantity ?? ''),
+      'image': TextEditingController(text: widget.product.image ?? ''),
+      'code': TextEditingController(text: widget.product.productCode ?? ''),
+    };
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers
+    _controllers.forEach((key, controller) => controller.dispose());
+    super.dispose();
+  }
+
+  void _updateProduct() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final productData = {
+      "Img": _controllers['image']!.text.trim(),
+      "ProductCode": _controllers['code']!.text.trim(),
+      "ProductName": _controllers['name']!.text.trim(),
+      "Qty": _controllers['quantity']!.text.trim(),
+      "TotalPrice": _controllers['totalPrice']!.text.trim(),
+      "UnitPrice": _controllers['price']!.text.trim()
+    };
+
+    final success = await _productService.updateProduct(widget.product.id ?? '', productData);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (success) {
+      _showSnackBar('Product updated successfully', isError: false);
+      Navigator.pop(context, true);
+    } else {
+      _showSnackBar('Failed to update product', isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
@@ -42,7 +91,7 @@ class _UpdateProductScreenState extends State<UpdateProductScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text('Update Product'),
+        title: const Text('Update Product'),
         backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -59,174 +108,86 @@ class _UpdateProductScreenState extends State<UpdateProductScreen> {
       key: _formKey,
       child: Column(
         children: [
-          TextFormField(
-            controller: _nameTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Name',
-                labelText: 'Product name'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product name';
-              }
-              return null;
-            },
+          _buildTextField(
+            controller: _controllers['name']!,
+            label: 'Product Name',
+            hint: 'Name',
+            validator: _validateRequired,
           ),
-          const SizedBox(
-            height: 10,
+          _buildTextField(
+            controller: _controllers['price']!,
+            label: 'Product Price',
+            hint: 'Price',
+            validator: _validateRequired,
           ),
-          TextFormField(
-            controller: _priceTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Price',
-                labelText: 'Product Price'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product price';
-              }
-              return null;
-            },
+          _buildTextField(
+            controller: _controllers['quantity']!,
+            label: 'Product Quantity',
+            hint: 'Quantity',
+            validator: _validateRequired,
           ),
-          const SizedBox(
-            height: 10,
+          _buildTextField(
+            controller: _controllers['totalPrice']!,
+            label: 'Product Total Price',
+            hint: 'Total Price',
+            validator: _validateRequired,
           ),
-          TextFormField(
-            controller: _quantityTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Quantity',
-                labelText: 'Product Quantity'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product quantity';
-              }
-              return null;
-            },
+          _buildTextField(
+            controller: _controllers['code']!,
+            label: 'Product Code',
+            hint: 'Code',
+            validator: _validateRequired,
           ),
-          const SizedBox(
-            height: 10,
-          ),
-          TextFormField(
-            controller: _totalPriceTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Total price',
-                labelText: 'Product Total Price'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product total price';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          TextFormField(
-            controller: _codeTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Code',
-                labelText: 'Product Code'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product code';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          TextFormField(
-            controller: _imageTEController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Image url',
-                labelText: 'Product Image'),
-            validator: (String? value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter product image url';
-              }
-              return null;
-            },
+          _buildTextField(
+            controller: _controllers['image']!,
+            label: 'Product Image',
+            hint: 'Image URL',
+            validator: _validateRequired,
           ),
           const SizedBox(height: 16),
-          Visibility(
-            visible: _updateProductInProgress == false,
-            replacement: const Center(
-              child: CircularProgressIndicator(),
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _updateProduct();
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              child: const Text(
-                'Update Product',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          )
+          _buildSubmitButton(),
         ],
       ),
     );
   }
 
-  Future<void> _updateProduct() async {
-    _updateProductInProgress = true;
-    setState(() {});
-    Uri uri = Uri.parse(
-        'https://crud.teamrabbil.com/api/v1/UpdateProduct/${widget.product.id}');
-
-    Map<String, dynamic> requestBody = {
-      "Img": _imageTEController.text.trim(),
-      "ProductCode": _codeTEController.text.trim(),
-      "ProductName": _nameTEController.text.trim(),
-      "Qty": _quantityTEController.text.trim(),
-      "TotalPrice": _totalPriceTEController.text.trim(),
-      "UnitPrice": _priceTEController.text.trim()
-    };
-
-    Response response = await post(
-      uri,
-      headers: {'Content-type': 'application/json'},
-      body: jsonEncode(requestBody),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required String? Function(String?) validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          hintText: hint,
+          labelText: label,
+        ),
+        validator: validator,
+      ),
     );
-    _updateProductInProgress = false;
-    setState(() {});
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Product has been updated!'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Product update failed! Try again.'),
-        ),
-      );
-    }
   }
 
-  @override
-  void dispose() {
-    _nameTEController.dispose();
-    _codeTEController.dispose();
-    _priceTEController.dispose();
-    _totalPriceTEController.dispose();
-    _imageTEController.dispose();
-    _quantityTEController.dispose();
-    super.dispose();
+  Widget _buildSubmitButton() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ElevatedButton(
+      onPressed: _updateProduct,
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+      child: const Text(
+        'Update Product',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  String? _validateRequired(String? value) {
+    return (value?.trim().isEmpty ?? true) ? 'This field is required' : null;
   }
 }
