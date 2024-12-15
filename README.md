@@ -1,16 +1,27 @@
-# crud
+# Flutter Product Management App
 
-A new Flutter project.
+## Overview
+A robust Flutter application for seamless product management, featuring comprehensive API integration, input validation, and error handling.
 
-## Getting Started
+## Features
+- Create new products via RESTful API
+- Detailed input validation
+- Advanced error handling
+- Clean, modular code architecture
+- Responsive UI design
 
-This project is a starting point for a Flutter application.
+## Screenshots
+<img src="/screenshots/app_screenshot.png" alt="App Screenshot" width="200">
 
-A few resources to get you started if this is your first Flutter project:
+## Prerequisites
+- Flutter SDK (latest stable version)
+- Dart SDK
+- Android Studio / VS Code
+- Xcode (for iOS development)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Installation
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Clone the Repository
+```bash
+git clone https://github.com/yourusername/product-management-app.git
+cd product-management-app
