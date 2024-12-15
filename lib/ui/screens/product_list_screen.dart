@@ -1,206 +1,129 @@
-import 'dart:convert';
 
-import 'package:crud/ui/screens/add_product_screen.dart';
-import 'package:crud/ui/widget/Shimmer_ProductList.dart';
-import 'package:crud/ui/widget/product_item.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-
+import '../../service/product_service.dart';
 import '../model/product.dart';
+import 'add_product_screen.dart';
+import '../widget/Shimmer_ProductList.dart';
+import '../widget/product_item.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  const ProductListScreen({Key? key}) : super(key: key);
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  List<Product> productList = [];
-  bool _getProductListprogress = false;
+  final ProductService _productService = ProductService();
+  List<Product> _productList = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    _getProuctList();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final products = await _productService.fetchProducts();
+      setState(() {
+        _productList = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorSnackBar('Failed to load products');
+    }
+  }
+
+  Future<void> _deleteProduct(Product product, int index) async {
+    final confirmed = await _showDeleteConfirmation(product);
+
+    if (confirmed) {
+      final success = await _productService.deleteProduct(product.id ?? '');
+
+      if (success) {
+        setState(() {
+          _productList.removeAt(index);
+        });
+        _showSuccessSnackBar('Product deleted');
+      } else {
+        _showErrorSnackBar('Failed to delete product');
+      }
+    }
+  }
+
+  Future<bool> _showDeleteConfirmation(Product product) async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: Text('Are you sure you want to delete ${product.productName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Product'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        title: const Text('Product List'),
         actions: [
           IconButton(
-              onPressed: () {
-                _getProuctList();
-                setState(() {});
-              },
-              icon: const Icon(Icons.refresh)),
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadProducts,
+          ),
           IconButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AddProductScreen.name);
-              },
-              icon: const Icon(Icons.add_box_outlined)),
+            icon: const Icon(Icons.add),
+            onPressed: () => Navigator.pushNamed(context, AddProductScreen.name),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: RefreshIndicator(
-          color: Colors.black,
-          backgroundColor: Colors.white,
-          onRefresh: () async {
-            await Future.delayed(const Duration(seconds: 2));
-            _getProuctList();
-            setState(() {});
+      body: _isLoading
+          ? const ShimmerProductList()
+          : RefreshIndicator(
+        onRefresh: _loadProducts,
+        child: ListView.builder(
+          itemCount: _productList.length,
+          itemBuilder: (context, index) {
+            final product = _productList[index];
+            return ProductItem(
+              product: product,
+              onDeleteTab: () => _deleteProduct(product, index),
+            );
           },
-          child: Visibility(
-            visible: _getProductListprogress == false,
-            replacement: const ShimmerProductList(),
-            child: ListView.builder(
-              itemCount: productList.length,
-              itemBuilder: (context, index) {
-                return ProductItem(
-                  product: productList[index],
-                  onDeleteTab: () {
-                    // TODO Delete
-                    _deleteItemDialog(productList[index], index);
-                    setState(() {});
-                  },
-                );
-              },
-            ),
-          ),
         ),
       ),
     );
-  }
-
-  /// Api call : Get Product List
-  Future<void> _getProuctList() async {
-    _getProductListprogress = true;
-    Uri uri = Uri.parse('https://crud.teamrabbil.com/api/v1/ReadProduct');
-    Response response = await get(uri);
-    print(response.body);
-    if (response.statusCode == 200) {
-      final decodedData = jsonDecode(response.body);
-
-      if (productList.isNotEmpty) productList.clear();
-
-      for (Map<String, dynamic> p in decodedData['data']) {
-        Product product = Product(
-          id: p['_id'],
-          productName: p['ProductName'],
-          productCode: p['ProductCode'],
-          quantity: p['Qty'],
-          unitPrice: p['UnitPrice'],
-          image: p['Img'],
-          totalPrice: p['TotalPrice'],
-          createdDate: p['CreatedDate'],
-        );
-        productList.add(product);
-      }
-      setState(() {});
-    }
-
-    _getProductListprogress = false;
-    setState(() {});
-  }
-
-  // TODO Show Delete Item Dialog
-  void _deleteItemDialog(Product product, int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Want to Delete?'),
-          backgroundColor: Colors.white,
-          content: Container(
-            decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(16)),
-                border: Border.all(color: Colors.grey)),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Image(
-                    height: 100,
-                    width: 70,
-                    image: NetworkImage('${product.image}'),
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.network(
-                          'https://static.thenounproject.com/png/1211233-200.png');
-                    },
-                  ),
-                  title: Text(product.productName ?? ''),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Product Code: ${product.productCode ?? ''}'),
-                      Text('Quantity:  ${product.quantity ?? ''}'),
-                      Text('Price:  ${product.unitPrice ?? ''}'),
-                      Text('Total Price:  ${product.totalPrice ?? ''}'),
-                    ],
-                  ),
-                  tileColor: Colors.white,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.grey)),
-              child: const Text(
-                'NO',
-                style: TextStyle(color: Colors.black),
-              ),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  _deletedProduct('${product.id}', index);
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
-                child: const Text(
-                  'YES',
-                  style: TextStyle(color: Colors.white),
-                )),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Delete Product API Call
-  Future<void> _deletedProduct(String ID, int index) async {
-    Uri uri = Uri.parse('https://crud.teamrabbil.com/api/v1/DeleteProduct/$ID');
-    Response response = await get(uri);
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Delete confirm'),
-        ),
-      );
-
-      productList.removeAt(index);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Deleting process "False" ID:$ID'),
-        ),
-      );
-    }
-    setState(() {});
   }
 }
