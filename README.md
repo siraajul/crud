@@ -23,6 +23,13 @@ A robust Flutter application for seamless product management, featuring comprehe
 - Android Studio / VS Code
 - Xcode (for iOS development)
 
+## Dependencies
+```bash
+dependencies:
+  http: ^1.2.2
+  shimmer: ^3.0.0
+```
+
 ## Installation
 
 ### Clone the Repository
@@ -70,3 +77,12 @@ lib/
 
 - Built-in Flutter state management
 - Modular loading state implementation
+
+## Contribution Guidelines
+
+- Fork the repository
+- Create your feature branch (git checkout -b feature/AmazingFeature)
+- Commit your changes (git commit -m 'Add some AmazingFeature')
+- Push to the branch (git push origin feature/AmazingFeature)
+- Open a Pull Request
+
